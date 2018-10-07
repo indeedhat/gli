@@ -19,3 +19,6 @@ if you need any more than that take a look at one of the other many command line
  - allowing for setting booleans with true/false keywords
  - allow for boolean arrays
  - allow for an argument to be required, or not based on the other arguments provided
+ 
+ 
+ This repo is covered under the MIT licence
