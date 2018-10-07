@@ -9,7 +9,7 @@ type SubCommand struct {
 
 
 func (cmd *SubCommand) Run() int {
-    fmt.Println("Main application command")
+    fmt.Println("Sub command")
     fmt.Printf("Slice: %v\n", cmd.Slice)
     fmt.Printf("Required: %v\n", cmd.Required)
 

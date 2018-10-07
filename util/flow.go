@@ -10,3 +10,9 @@ func IfElse(condition bool, is, isnt interface{}) interface{} {
 
     return isnt
 }
+
+
+// simplify if statements requiring an xor
+func Xor(first, second bool) bool {
+    return first != second
+}

@@ -27,7 +27,7 @@ func NewParser(app *App, args []string) (parser Parser) {
             i := strings.Index(val, "=")
             if i > 0 {
                 final = append(final, val[:i])
-                final = append(final, val[i:])
+                final = append(final, val[i + 1:])
             } else {
                 final = append(final, val)
             }
@@ -54,7 +54,7 @@ func (parser *Parser) Parse() (err error) {
         var expected *ExpectedArg
 
         if isntDashed(arg) {
-            expected = parser.findExpected(arg)
+            expected = parser.findExpected(arg, true)
 
             if nil != expected && parser.app.SelectCommand(expected.FieldName) {
                 parser.extractExpectedArgs()
@@ -65,19 +65,19 @@ func (parser *Parser) Parse() (err error) {
         if isDoubleDash(arg) || isSingleDash(arg) {
             errorString = fmt.Sprintf("Found unexpected arg %s", arg)
             offset, _   := util.IfElse(isDoubleDash(arg), 2, 1).(int)
-            expected    = parser.findExpected(arg[offset:])
+            expected    = parser.findExpected(arg[offset:], false)
 
             // if it is not a flag then the next arg becomes the val
             if nil != expected && reflect.Bool != expected.ArgType.Kind() {
                 if i +1 < len(parser.Raw) {
                     value = parser.Raw[i + 1]
                     i++
-                } else if reflect.Bool == expected.ArgType.Kind() {
-                    value = "true"
                 } else {
                     errorString = fmt.Sprintf("No value given for arg %s", arg)
                     expected = nil
                 }
+            } else if reflect.Bool == expected.ArgType.Kind() {
+                value = "true"
             }
         } else if isDashGroup(arg) {
             arg = arg[1:]
@@ -85,9 +85,10 @@ func (parser *Parser) Parse() (err error) {
             // split into single dash flags
             for x := 0; x < len(arg); x++ {
                 errorString = fmt.Sprintf("Found unexpected arg %s", arg[x])
-                expected    = parser.findExpected(string(arg[x]))
+                expected    = parser.findExpected(string(arg[x]), false)
+
                 if nil != expected && reflect.Bool == expected.ArgType.Kind() {
-                    if err = parser.checkAndAssign(value, errorString, expected); nil != err {
+                    if err = parser.checkAndAssign("true", errorString, expected); nil != err {
                         return
                     }
                 } else if nil != expected {
@@ -96,7 +97,7 @@ func (parser *Parser) Parse() (err error) {
                         value = parser.Raw[i + 1]
                         i++
                     } else {
-                        value = arg[x:]
+                        value = arg[x + 1:]
                     }
                     break
                 }
@@ -112,6 +113,9 @@ func (parser *Parser) Parse() (err error) {
             return
         }
     }
+
+    parser.assignMissingDefaults()
+    err = parser.validateRequiredArgs()
 
     return
 }
@@ -141,7 +145,7 @@ func (parser *Parser) extractExpectedArgs() {
 // post parse: find any missing args with a default value and add them to the valid list
 func (parser *Parser) assignMissingDefaults() {
     for _, expected := range parser.Expected {
-        if _, ok := parser.Valid[expected.FieldName]; !ok {
+        if _, ok := parser.Valid[expected.FieldName]; !ok && "" != expected.DefaultVal {
             parser.addToValid(expected.DefaultVal, expected)
         }
     }
@@ -158,7 +162,7 @@ func (parser *Parser) validateRequiredArgs() (err error) {
                 tpe := util.IfElse(reflect.Bool == expected.ArgType.Kind(), "flag", "named argument")
                 return errors.New(fmt.Sprintf("Missing required %s %s", tpe, expected.Keys[0]))
             }
-        }
+        } 
     }
 
     return
@@ -178,9 +182,9 @@ func (parser *Parser) checkAndAssign(value, errorString string, expected *Expect
 
 
 // return an expected argument for the given raw argument
-func (parser *Parser) findExpected(arg string) (expected *ExpectedArg) {
+func (parser *Parser) findExpected(arg string, commandSearch bool) (expected *ExpectedArg) {
     for _, expected = range parser.Expected {
-        if expected.hasKey(arg) {
+        if expected.hasKey(arg) && util.Xor(commandSearch, reflect.Struct != expected.ArgType.Kind()) {
             return
         }
     }

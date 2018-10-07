@@ -32,9 +32,7 @@ func (app *App) Run() {
     if nil == err {
         inflater := NewInflater(app.Subject, parser.Valid)
         inflater.Run()
-    }
-
-    if nil != err {
+    } else {
         os.Stderr.WriteString(err.Error())
 
         if ah, ok := app.Subject.(AutoHelper); ok && ah.AutoHelp() {
