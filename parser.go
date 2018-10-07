@@ -162,7 +162,7 @@ func (parser *Parser) validateRequiredArgs() (err error) {
                 tpe := util.IfElse(reflect.Bool == expected.ArgType.Kind(), "flag", "named argument")
                 return errors.New(fmt.Sprintf("Missing required %s %s", tpe, expected.Keys[0]))
             }
-        } 
+        }
     }
 
     return
