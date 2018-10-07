@@ -51,6 +51,8 @@ func (parser *Parser) Parse() (err error) {
         arg         := parser.Raw[i]
         value       := ""
         errorString := ""
+        position    := -1
+        key         := ""
         var expected *ExpectedArg
 
         if isntDashed(arg) {
@@ -68,27 +70,31 @@ func (parser *Parser) Parse() (err error) {
             expected    = parser.findExpected(arg[offset:], false)
 
             // if it is not a flag then the next arg becomes the val
-            if nil != expected && reflect.Bool != expected.ArgType.Kind() {
-                if i +1 < len(parser.Raw) {
-                    value = parser.Raw[i + 1]
-                    i++
+            if nil != expected {
+                key = arg[offset:]
+                if reflect.Bool != expected.ArgType.Kind() {
+                    if i +1 < len(parser.Raw) {
+                        value = parser.Raw[i + 1]
+                        i++
+                    } else {
+                        errorString = fmt.Sprintf("No value given for arg %s", arg)
+                        expected = nil
+                    }
                 } else {
-                    errorString = fmt.Sprintf("No value given for arg %s", arg)
-                    expected = nil
+                    value = "true"
                 }
-            } else if reflect.Bool == expected.ArgType.Kind() {
-                value = "true"
             }
         } else if isDashGroup(arg) {
             arg = arg[1:]
 
             // split into single dash flags
             for x := 0; x < len(arg); x++ {
+                key         = string(arg[x])
                 errorString = fmt.Sprintf("Found unexpected arg %s", arg[x])
-                expected    = parser.findExpected(string(arg[x]), false)
+                expected    = parser.findExpected(key, false)
 
                 if nil != expected && reflect.Bool == expected.ArgType.Kind() {
-                    if err = parser.checkAndAssign("true", errorString, expected); nil != err {
+                    if err = parser.checkAndAssign("true", key, errorString, expected, position); nil != err {
                         return
                     }
                 } else if nil != expected {
@@ -106,10 +112,11 @@ func (parser *Parser) Parse() (err error) {
             errorString = fmt.Sprintf("Found unexpected positional arg '%s' at position %d", arg, c)
             expected    = parser.findPositionalExpected(c)
             value       = arg
+            position    = c
             c++
         }
 
-        if err = parser.checkAndAssign(value, errorString, expected); nil != err {
+        if err = parser.checkAndAssign(value, key, errorString, expected, position); nil != err {
             return
         }
     }
@@ -146,7 +153,7 @@ func (parser *Parser) extractExpectedArgs() {
 func (parser *Parser) assignMissingDefaults() {
     for _, expected := range parser.Expected {
         if _, ok := parser.Valid[expected.FieldName]; !ok && "" != expected.DefaultVal {
-            parser.addToValid(expected.DefaultVal, expected)
+            parser.addToValid(expected.DefaultVal, expected.Keys[0], expected, -1)
         }
     }
 }
@@ -171,12 +178,12 @@ func (parser *Parser) validateRequiredArgs() (err error) {
 
 // check for an error
 // assign valid arg if none is found
-func (parser *Parser) checkAndAssign(value, errorString string, expected *ExpectedArg) (err error) {
+func (parser *Parser) checkAndAssign(value, key, errorString string, expected *ExpectedArg, offset int) (err error) {
     if nil == expected && !parser.unexpectedAllowed() {
         return errors.New(errorString)
     }
 
-    parser.addToValid(value, expected)
+    parser.addToValid(value, key, expected, offset)
     return nil
 }
 
@@ -212,11 +219,11 @@ func (parser *Parser) findPositionalExpected(i int) (expected *ExpectedArg) {
 
 
 // add argument to the valid args map
-func (parser *Parser) addToValid(value string, expected *ExpectedArg) {
+func (parser *Parser) addToValid(value, key string, expected *ExpectedArg, offset int) {
     if val, ok := parser.Valid[expected.FieldName]; ok {
         val.Value = append(val.Value, value)
     } else {
-        parser.Valid[expected.FieldName] = newValidArg(expected, value)
+        parser.Valid[expected.FieldName] = newValidArg(expected, value, key, offset)
     }
 }
 
