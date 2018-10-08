@@ -101,7 +101,7 @@ func (app *App) ShowHelp(force bool) bool {
         os.Stdout.WriteString(cmd.Help(app.Parser.Expected))
     } else {
         doc := NewDocumenter(app.Parser.Expected)
-        os.Stdout.WriteString(doc.Build() + " ----- ")
+        os.Stdout.WriteString(doc.Build())
     }
 
     return true

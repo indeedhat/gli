@@ -64,8 +64,7 @@ func (doc *Documenter) Build() string {
 
 func (doc *Documenter) buildPositionalEntry(buffer *bytes.Buffer) {
     // get arg name from struct field
-
-    fmt.Fprint(buffer, strings.ToLower(doc.Subject.FieldName))
+    openArg(buffer, strings.ToLower(doc.Subject.FieldName))
 
     doc.buildArgEntry(buffer)
 }
@@ -82,7 +81,7 @@ func (doc *Documenter) buildOptionEntry(buffer *bytes.Buffer) {
         }
     }
 
-    fmt.Fprint(buffer, strings.Join(opts, ", "))
+    openArg(buffer, strings.Join(opts, ", "))
     doc.buildArgEntry(buffer)
 }
 
@@ -103,14 +102,13 @@ func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer) {
     // add the description
     description := ""
     if "" != doc.Subject.Description {
-        description = fmt.Sprintf("%s%s%s\n", TAB, TAB, doc.Subject.Description)
+        description = fmt.Sprintf("%s%s\n", TAB, doc.Subject.Description)
     }
 
     // build the output
     fmt.Fprintf(
         buffer,
-        "%s%s%s\n%s",
-        TAB,
+        "%s%s\n%s\n",
         color.Wrap(def, color.LightGray),
         color.Wrap(required, color.Red),
         color.Wrap(description, color.LightGray),
@@ -123,7 +121,7 @@ func (doc *Documenter) buildCommandEntry(buffer *bytes.Buffer) {
     sort.Slice(opts, func (i, j int) bool {
         return len(opts[i]) > len(opts[j])
     })
-    fmt.Fprintf(buffer, "%s [%s]", opts[0], strings.Join(opts[1:], ", "))
+    openArg(buffer, fmt.Sprintf("%s [%s]", opts[0], strings.Join(opts[1:], ", ")))
 
     doc.buildArgEntry(buffer)
 }
@@ -132,4 +130,8 @@ func (doc *Documenter) buildCommandEntry(buffer *bytes.Buffer) {
 // create a header block
 func (doc *Documenter) buildHeader(buffer *bytes.Buffer, text string) {
     fmt.Fprintf(buffer, "\n%s\n\n", color.Wrap(text + ":", color.White))
+}
+
+func openArg(buffer *bytes.Buffer, text string) {
+    fmt.Fprintf(buffer, "%s%s", TAB, color.Wrap(text, color.White))
 }
