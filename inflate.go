@@ -1,7 +1,7 @@
 package gli
 
 import (
-    "github.com/indeedhat/util"
+    "github.com/indeedhat/gli/util"
     "errors"
     "reflect"
     "strconv"
