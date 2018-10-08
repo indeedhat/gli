@@ -1,7 +1,7 @@
 package gli
 
 import (
-    "./util"
+    "github.com/indeedhat/util"
     "errors"
     "fmt"
     "reflect"
