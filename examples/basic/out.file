@@ -1,0 +1,12 @@
+
+[1;37mOptions:[0
+
+"    --flag, -f"[0;37m[0[0;31m[0
+[0;37m[0"    --string, -s, -S"[0;37m[0[0;31m[0
+[0;37m[0"    --help, -h, -H"[0;37m[0[0;31m[0
+[0;37m[0
+[1;37mCommands:[0
+
+    subcommand [sub, s][0;37m[0[0;31m[0
+[0;37m        does some sub command things
+[0

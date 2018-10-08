@@ -1,7 +1,6 @@
 package gli
 
 import (
-    "fmt"
     "os"
     "reflect"
 )
@@ -99,10 +98,10 @@ func (app *App) ShowHelp(force bool) bool {
     }
 
     if cmd, ok := app.Subject.(CustomHelp); ok {
-        fmt.Print(cmd.Help(app.Parser.Expected))
+        os.Stdout.WriteString(cmd.Help(app.Parser.Expected))
     } else {
         doc := NewDocumenter(app.Parser.Expected)
-        fmt.Print(doc.Build())
+        os.Stdout.WriteString(doc.Build() + " ----- ")
     }
 
     return true

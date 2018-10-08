@@ -64,9 +64,10 @@ func (doc *Documenter) Build() string {
 
 func (doc *Documenter) buildPositionalEntry(buffer *bytes.Buffer) {
     // get arg name from struct field
-    name := strings.ToLower(doc.Subject.FieldName)
 
-    doc.buildArgEntry(buffer, name)
+    fmt.Fprint(buffer, strings.ToLower(doc.Subject.FieldName))
+
+    doc.buildArgEntry(buffer)
 }
 
 
@@ -81,11 +82,12 @@ func (doc *Documenter) buildOptionEntry(buffer *bytes.Buffer) {
         }
     }
 
-    doc.buildArgEntry(buffer, strings.Join(opts, ", "))
+    fmt.Fprint(buffer, strings.Join(opts, ", "))
+    doc.buildArgEntry(buffer)
 }
 
 
-func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer, argspec string) {
+func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer) {
     // add default value
     def := ""
     if "" != doc.Subject.DefaultVal && reflect.Bool != doc.Subject.ArgType.Kind() {
@@ -107,10 +109,9 @@ func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer, argspec string) {
     // build the output
     fmt.Fprintf(
         buffer,
-        "--%s%s%s%s\n%s",
+        "%s%s%s\n%s",
         TAB,
-        color.Wrap(argspec, color.White),
-        color.Wrap(def, color.DarkGray),
+        color.Wrap(def, color.LightGray),
         color.Wrap(required, color.Red),
         color.Wrap(description, color.LightGray),
     )
@@ -122,11 +123,9 @@ func (doc *Documenter) buildCommandEntry(buffer *bytes.Buffer) {
     sort.Slice(opts, func (i, j int) bool {
         return len(opts[i]) > len(opts[j])
     })
+    fmt.Fprintf(buffer, "%s [%s]", opts[0], strings.Join(opts[1:], ", "))
 
-    doc.buildArgEntry(
-        buffer,
-        fmt.Sprintf("%s [%s]", opts[0], strings.Join(opts[1:], ", ")),
-    )
+    doc.buildArgEntry(buffer)
 }
 
 
