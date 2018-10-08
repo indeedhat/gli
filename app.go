@@ -9,6 +9,7 @@ import (
 type App struct {
     Structure Command // the full structure of the application
     Subject   Command // the command that is currently being run
+    Parser    Parser
 }
 
 
@@ -24,27 +25,45 @@ func NewApplication(structure Command) (app *App) {
 
 // parse input and run appropriate command
 func (app *App) Run() {
+    code := 0 // response/exit code
     args := os.Args[1:]
 
-    parser := NewParser(app, args)
-    err    := parser.Parse()
+    app.Parser = NewParser(app, args)
+    err    := app.Parser.Parse()
 
+    // inflate struct with args if they could be parsed
     if nil == err {
-        inflater := NewInflater(app.Subject, parser.Valid)
+        inflater := NewInflater(app.Subject, app.Parser.Valid)
         err = inflater.Run()
     }
 
-    if nil != err {
-        os.Stderr.WriteString(err.Error())
-
-        if ah, ok := app.Subject.(AutoHelper); ok && ah.AutoHelp() {
-            app.ShowHelp()
-        }
-
-        os.Exit(1)
+    // Check flags and show help if required
+    if app.ShowHelp(false) {
+        os.Exit(0)
     }
 
-    code := app.Subject.Run()
+    // run app if command if there is no error
+    if nil == err {
+        code = app.Subject.Run()
+    }
+
+    if nil != err || 0 != code {
+        // display error if present
+        if nil != err {
+            os.Stderr.WriteString(err.Error())
+        }
+
+        // set default fail code
+        if 0 == code {
+            code = 1
+        }
+
+        // show help if auto helper is implemented
+        if ah, ok := app.Subject.(AutoHelper); ok && ah.AutoHelp() {
+            app.ShowHelp(true)
+        }
+    }
+
     os.Exit(code)
 }
 
@@ -64,6 +83,27 @@ func (app *App) SelectCommand(fieldName string) bool {
 }
 
 
-func (app *App) ShowHelp() {
-    fmt.Println("Showing auto help")
+func (app *App) ShowHelp(force bool) bool {
+    if !force {
+        for field, arg := range app.Parser.Valid {
+            if "Help" != field { continue }
+
+            if reflect.Bool == arg.ArgType.Kind() && "true" == arg.Value[len(arg.Value) - 1] {
+                force = true
+            }
+        }
+
+        if !force {
+            return false
+        }
+    }
+
+    if cmd, ok := app.Subject.(CustomHelp); ok {
+        fmt.Print(cmd.Help(app.Parser.Expected))
+    } else {
+        doc := NewDocumenter(app.Parser.Expected)
+        fmt.Print(doc.Build())
+    }
+
+    return true
 }
