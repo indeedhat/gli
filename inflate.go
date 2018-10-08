@@ -139,8 +139,8 @@ func (inf *Inflater) inflateBool(arg *ValidArg) error {
 
     if util.IsSlice(arg.ArgType) {
         var newvals []bool
-        for _, v = range arg.Value {
-            if i, err := strconv.ParseBool(v); nil == err {
+        for _, v := range arg.Value {
+            if i, err = strconv.ParseBool(v); nil == err {
                 newvals = append(newvals, i)
             }
         }
