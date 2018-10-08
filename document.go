@@ -1,6 +1,7 @@
 package gli
 
 import (
+    "bytes"
     "github.com/indeedhat/gli/color"
     "fmt"
     "reflect"
@@ -9,8 +10,7 @@ import (
 )
 
 
-const TAB     = "    "
-const TABSIZE = 4
+const TAB = "    "
 
 type Documenter struct {
     Expected []*ExpectedArg
@@ -27,44 +27,50 @@ func NewDocumenter(expected []*ExpectedArg) (doc *Documenter) {
 
 
 func (doc *Documenter) Build() string {
-    commands, args, options := "", "", ""
+    commands := bytes.NewBufferString("")
+    args     := bytes.NewBufferString("")
+    options  := bytes.NewBufferString("")
+    output   := bytes.NewBufferString("")
     for _, doc.Subject = range doc.Expected {
         if reflect.Struct == doc.Subject.ArgType.Kind() {
-            if "" == commands {
-                commands = doc.buildHeader("Commands")
+            if 0 == commands.Len() {
+                doc.buildHeader(commands, "Commands")
             }
-            commands += doc.buildCommandEntry()
+            doc.buildCommandEntry(commands)
         } else if 0 == len(doc.Subject.Keys) {
-            if "" == args {
-                args += doc.buildHeader("Arguments")
+            if 0 == args.Len() {
+                doc.buildHeader(args, "Arguments")
             }
-            args += doc.buildPositionalEntry()
+            doc.buildPositionalEntry(args)
         } else {
-            if "" == options {
-                options += doc.buildHeader("Options")
+            if 0 == options.Len() {
+                doc.buildHeader(options, "Options")
             }
-            options += doc.buildOptionEntry()
+            doc.buildOptionEntry(options)
         }
     }
 
-    return fmt.Sprintf(
+    fmt.Fprintf(
+        output,
         "%s%s%s",
         args,
         options,
         commands,
     )
+
+    return output.String()
 }
 
 
-func (doc *Documenter) buildPositionalEntry() string {
+func (doc *Documenter) buildPositionalEntry(buffer *bytes.Buffer) {
     // get arg name from struct field
     name := strings.ToLower(doc.Subject.FieldName)
 
-    return doc.buildArgEntry(name)
+    doc.buildArgEntry(buffer, name)
 }
 
 
-func (doc *Documenter) buildOptionEntry() string {
+func (doc *Documenter) buildOptionEntry(buffer *bytes.Buffer) {
     // build list of options
     var opts []string
     for i := 0; i < len(doc.Subject.Keys); i++ {
@@ -75,11 +81,11 @@ func (doc *Documenter) buildOptionEntry() string {
         }
     }
 
-    return doc.buildArgEntry(strings.Join(opts, ", "))
+    doc.buildArgEntry(buffer, strings.Join(opts, ", "))
 }
 
 
-func (doc *Documenter) buildArgEntry(argspec string) string {
+func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer, argspec string) {
     // add default value
     def := ""
     if "" != doc.Subject.DefaultVal && reflect.Bool != doc.Subject.ArgType.Kind() {
@@ -99,8 +105,9 @@ func (doc *Documenter) buildArgEntry(argspec string) string {
     }
 
     // build the output
-    return fmt.Sprintf(
-        "%s%s%s%s\n%s\n",
+    fmt.Fprintf(
+        buffer,
+        "--%s%s%s%s\n%s",
         TAB,
         color.Wrap(argspec, color.White),
         color.Wrap(def, color.DarkGray),
@@ -110,19 +117,20 @@ func (doc *Documenter) buildArgEntry(argspec string) string {
 }
 
 
-func (doc *Documenter) buildCommandEntry() string {
+func (doc *Documenter) buildCommandEntry(buffer *bytes.Buffer) {
     var opts = doc.Subject.Keys
     sort.Slice(opts, func (i, j int) bool {
         return len(opts[i]) > len(opts[j])
     })
 
-    return doc.buildArgEntry(
+    doc.buildArgEntry(
+        buffer,
         fmt.Sprintf("%s [%s]", opts[0], strings.Join(opts[1:], ", ")),
     )
 }
 
 
 // create a header block
-func (doc *Documenter) buildHeader(text string) (entry string) {
-    return fmt.Sprintf("\n%s:\n\n", color.Wrap(text, color.White))
+func (doc *Documenter) buildHeader(buffer *bytes.Buffer, text string) {
+    fmt.Fprintf(buffer, "\n%s\n\n", color.Wrap(text + ":", color.White))
 }

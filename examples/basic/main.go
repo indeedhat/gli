@@ -1,7 +1,7 @@
 package main
 
 import (
-    gli "../.."
+    "github.com/indeedhat/gli"
 )
 
 func main() {
@@ -9,4 +9,5 @@ func main() {
 
     cli := gli.NewApplication(app)
     cli.Run()
+    //
 }

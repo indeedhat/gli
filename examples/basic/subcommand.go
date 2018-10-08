@@ -4,7 +4,8 @@ import "fmt"
 
 type SubCommand struct {
     Slice    []string `gli:"data,d"`
-    Required int `gli:"!r"`
+    Required int `gli:"!r" description:"oooohh required!"`
+    Help       bool       `gli:"help,h,H"`
 }
 
 
