@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "reflect"
+    "strconv"
     "strings"
 )
 
@@ -71,17 +72,19 @@ func (parser *Parser) Parse() (err error) {
 
             // if it is not a flag then the next arg becomes the val
             if nil != expected {
-                key = arg[offset:]
-                if reflect.Bool != expected.ArgType.Kind() {
-                    if i +1 < len(parser.Raw) {
-                        value = parser.Raw[i + 1]
-                        i++
-                    } else {
-                        errorString = fmt.Sprintf("No value given for arg %s", arg)
-                        expected = nil
+                key   = arg[offset:]
+                value = parser.nextValue(arg, i, -1)
+                if reflect.Bool == expected.ArgType.Kind() {
+                    if _, err := strconv.ParseBool(value); nil != err {
+                        value = "true"
                     }
-                } else {
-                    value = "true"
+                } else if "" == value  {
+                    errorString = fmt.Sprintf("No value given for arg %s", arg)
+                    expected    = nil
+                }
+
+                if nil != err && "" != value {
+                    i++
                 }
             }
         } else if isDashGroup(arg) {
@@ -93,18 +96,18 @@ func (parser *Parser) Parse() (err error) {
                 errorString = fmt.Sprintf("Found unexpected arg %s", arg[x])
                 expected    = parser.findExpected(key, false)
 
-                if nil != expected && reflect.Bool == expected.ArgType.Kind() {
-                    if err = parser.checkAndAssign("true", key, errorString, expected, position); nil != err {
-                        return
+                if nil == expected {
+                    break
+                }
+
+                value = parser.nextValue(arg, x, i)
+                if reflect.Bool == expected.ArgType.Kind() {
+                    if _, err := strconv.ParseBool(value); nil != err {
+                        value = "true"
                     }
-                } else if nil != expected {
-                    // if a named arg is found set the rest or next arg of the group as the value
-                    if len(arg) -1 == x {
-                        value = parser.Raw[i + 1]
-                        i++
-                    } else {
-                        value = arg[x + 1:]
-                    }
+                }
+                if "" != value {
+                    err = nil
                     break
                 }
             }
@@ -127,6 +130,16 @@ func (parser *Parser) Parse() (err error) {
     return
 }
 
+
+func (parser *Parser) nextValue(arg string, i, x int) string {
+    if -1 != x && len(arg) -1 == x {
+        return parser.Raw[i + 1]
+    } else if len(parser.Raw) -1 > i  {
+        return parser.Raw[i + 1]
+    }
+
+    return ""
+}
 
 // extract all the expected arguments
 func (parser *Parser) extractExpectedArgs() {

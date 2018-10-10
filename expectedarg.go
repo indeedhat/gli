@@ -31,11 +31,10 @@ func newExpectedArg(field reflect.StructField, val reflect.Value) *ExpectedArg {
     description := field.Tag.Get("description")
 
     // parse default tag for all but bools, arrays and slices (they cannot have default values)
-    defaultVal, _ := util.IfElse(
-        reflect.Bool == val.Kind() || util.IsSlice(val),
-        "",
-        field.Tag.Get("default"),
-    ).(string)
+    defaultVal := field.Tag.Get("default")
+    if reflect.Bool == val.Kind() && "true" != defaultVal && "false" != defaultVal {
+        defaultVal = "false"
+    }
 
     // create arg for return
     return &ExpectedArg{
