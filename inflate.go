@@ -26,24 +26,19 @@ func NewInflater(subject Command, vals map[string]*ValidArg) (inflate *Inflater)
 
 func (inf *Inflater) Run() (err error) {
     for _, val := range inf.Values {
-        tpe := val.ArgType.Type().Kind()
-        if util.IsSlice(val.ArgType) {
-            tpe = val.ArgType.Type().Elem().Kind()
-        }
-
-        switch tpe {
-        case reflect.Bool:
-            err = inf.inflateBool(val)
-        case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-            err = inf.inflateInt(val)
-        case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-            err = inf.inflateUint(val)
-        case reflect.Float32, reflect.Float64:
-            err = inf.inflateFloat(val)
-        case reflect.String:
-            err = inf.inflateString(val)
-        default:
-            // do nothing
+        switch util.GetKind(val.ArgType) {
+            case reflect.Bool:
+                err = inf.inflateBool(val)
+            case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+                err = inf.inflateInt(val)
+            case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+                err = inf.inflateUint(val)
+            case reflect.Float32, reflect.Float64:
+                err = inf.inflateFloat(val)
+            case reflect.String:
+                err = inf.inflateString(val)
+            default:
+                // do nothing
         }
 
         if nil != err { return }
@@ -55,7 +50,7 @@ func (inf *Inflater) Run() (err error) {
 
 func (inf *Inflater) inflateString(arg *ValidArg) error {
     if util.IsSlice(arg.ArgType) {
-        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.Value)))
+        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.ArgType)))
     } else {
         arg.ArgType.SetString(arg.Value[len(arg.Value) - 1])
     }
@@ -75,7 +70,7 @@ func (inf *Inflater) inflateInt(arg *ValidArg) error {
                 newvals = append(newvals, i)
             } else { break }
         }
-        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.Value)))
+        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(newvals)))
     } else {
         i, err = strconv.ParseInt(arg.Value[len(arg.Value) - 1], 10, 64)
         if err == nil {
@@ -98,7 +93,7 @@ func (inf *Inflater) inflateUint(arg *ValidArg) error {
                 newvals = append(newvals, i)
             } else { break }
         }
-        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.Value)))
+        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(newvals)))
     } else {
         i, err = strconv.ParseUint(arg.Value[len(arg.Value) - 1], 10, 64)
         if err == nil {
@@ -121,7 +116,7 @@ func (inf *Inflater) inflateFloat(arg *ValidArg) error {
                 newvals = append(newvals, i)
             } else { break }
         }
-        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.Value)))
+        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(newvals)))
     } else {
         i, err = strconv.ParseFloat(arg.Value[len(arg.Value) - 1], 64)
         if err == nil {
@@ -144,7 +139,7 @@ func (inf *Inflater) inflateBool(arg *ValidArg) error {
                 newvals = append(newvals, i)
             }
         }
-        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.Value)))
+        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(newvals)))
     } else {
         i, err = strconv.ParseBool(arg.Value[len(arg.Value) - 1])
         if err == nil {

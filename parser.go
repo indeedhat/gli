@@ -45,9 +45,6 @@ func NewParser(app *App, args []string) (parser Parser) {
 
 // Main method of the parser runs the thing
 func (parser *Parser) Parse() (err error) {
-    // skip if there are no args to parse
-    if 0 == len(parser.Raw) { return }
-
     for i, c := 0, 0; i < len(parser.Raw); i++ {
         arg         := parser.Raw[i]
         value       := ""
@@ -74,8 +71,8 @@ func (parser *Parser) Parse() (err error) {
             if nil != expected {
                 key   = arg[offset:]
                 value = parser.nextValue(arg, i, -1)
-                if reflect.Bool == expected.ArgType.Kind() {
-                    if _, err := strconv.ParseBool(value); nil != err {
+                if util.CheckKind(expected.ArgType, reflect.Bool) {
+                    if _, err = strconv.ParseBool(value); nil != err {
                         value = "true"
                     }
                 } else if "" == value  {
@@ -83,8 +80,12 @@ func (parser *Parser) Parse() (err error) {
                     expected    = nil
                 }
 
-                if nil != err && "" != value {
-                    i++
+                if "" != value {
+                    if nil != err {
+                        err = nil
+                    } else {
+                        i++
+                    }
                 }
             }
         } else if isDashGroup(arg) {
@@ -94,21 +95,21 @@ func (parser *Parser) Parse() (err error) {
             for x := 0; x < len(arg); x++ {
                 key         = string(arg[x])
                 errorString = fmt.Sprintf("Found unexpected arg %s", arg[x])
-                expected    = parser.findExpected(key, false)
-
-                if nil == expected {
+                if expected = parser.findExpected(key, false); nil == expected {
                     break
                 }
 
-                value = parser.nextValue(arg, x, i)
-                if reflect.Bool == expected.ArgType.Kind() {
+                value = parser.nextValue(arg, i, x)
+                if util.CheckKind(expected.ArgType, reflect.Bool) {
                     if _, err := strconv.ParseBool(value); nil != err {
                         value = "true"
                     }
                 }
-                if "" != value {
-                    err = nil
+
+                if arg[x + 1:] == value {
                     break
+                } else if "" != value {
+                    i++
                 }
             }
         } else {
@@ -132,8 +133,8 @@ func (parser *Parser) Parse() (err error) {
 
 
 func (parser *Parser) nextValue(arg string, i, x int) string {
-    if -1 != x && len(arg) -1 == x {
-        return parser.Raw[i + 1]
+    if -1 != x && len(arg) -1 > x {
+        return arg[x + 1:]
     } else if len(parser.Raw) -1 > i  {
         return parser.Raw[i + 1]
     }
@@ -179,7 +180,7 @@ func (parser *Parser) validateRequiredArgs() (err error) {
             if 0 == len(expected.Keys) {
                 return errors.New("Missing required positional argument")
             } else {
-                tpe := util.IfElse(reflect.Bool == expected.ArgType.Kind(), "flag", "named argument")
+                tpe := util.IfElse(util.CheckKind(expected.ArgType, reflect.Bool), "flag", "named argument")
                 return errors.New(fmt.Sprintf("Missing required %s %s", tpe, expected.Keys[0]))
             }
         }
