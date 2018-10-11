@@ -45,6 +45,7 @@ func NewParser(app *App, args []string) (parser Parser) {
 
 // Main method of the parser runs the thing
 func (parser *Parser) Parse() (err error) {
+    override := false
     for i, c := 0, 0; i < len(parser.Raw); i++ {
         arg         := parser.Raw[i]
         value       := ""
@@ -123,10 +124,20 @@ func (parser *Parser) Parse() (err error) {
         if err = parser.checkAndAssign(value, key, errorString, expected, position); nil != err {
             return
         }
+
+        if nil != expected && expected.Override {
+            parser.Valid    =  map[string]*ValidArg {
+                expected.FieldName: parser.Valid[expected.FieldName],
+            }
+            override = true
+            break
+        }
     }
 
-    parser.assignMissingDefaults()
-    err = parser.validateRequiredArgs()
+    if false == override {
+        parser.assignMissingDefaults()
+        err = parser.validateRequiredArgs()
+    }
 
     return
 }

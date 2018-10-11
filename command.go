@@ -8,9 +8,9 @@ type Command interface {
 }
 
 
-// auto help commands will show help on any error if AutoHelp() returns true
-type AutoHelper interface {
-    AutoHelp() bool
+// used to generate help documentation
+type Helper interface {
+    NeedHelp() bool
 }
 
 
@@ -24,5 +24,6 @@ type IgnoreUnexpected interface {
 
 // returns a custom help string to be passed on help call or error
 type CustomHelp interface {
-    Help(expected []*ExpectedArg) string
+    Helper
+    GenerateHelp(expected []*ExpectedArg) string
 }

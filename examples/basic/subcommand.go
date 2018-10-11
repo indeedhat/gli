@@ -1,11 +1,18 @@
 package main
 
-import "fmt"
+import (
+    "fmt"
+)
 
 type SubCommand struct {
+    Help     bool     `gli:"^help,h"`
     Slice    []string `gli:"data,d"`
-    Required int `gli:"!r" description:"oooohh required!"`
-    Help       bool       `gli:"help,h,H"`
+    Required int      `gli:"!r" description:"oooohh required!"`
+    OWrite   bool     `gli:"^o"`
+}
+
+func (cmd *SubCommand) NeedHelp() bool {
+    return cmd.Help
 }
 
 

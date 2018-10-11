@@ -1,7 +1,6 @@
 package gli
 
 import (
-    "github.com/indeedhat/gli/util"
     "reflect"
     "strings"
 )
@@ -14,6 +13,7 @@ type ExpectedArg struct {
     DefaultVal  string
     Required    bool
     Description string
+    Override    bool
 }
 
 
@@ -23,9 +23,13 @@ func newExpectedArg(field reflect.StructField, val reflect.Value) *ExpectedArg {
     gliTag := field.Tag.Get("gli")
     if "" == gliTag { return nil }
 
-    // parser gli tag
-    required  := "!" == gliTag[:1]
-    offset, _ := util.IfElse(required, 1, 0).(int)
+    // check arg options
+    required  := strings.Contains(gliTag, "!")
+    override  := strings.Contains(gliTag, "^")
+    if required || override {
+        rep := strings.NewReplacer("!", "", "^", "")
+        gliTag = rep.Replace(gliTag)
+    }
 
     // parse description tag
     description := field.Tag.Get("description")
@@ -39,11 +43,12 @@ func newExpectedArg(field reflect.StructField, val reflect.Value) *ExpectedArg {
     // create arg for return
     return &ExpectedArg{
         field.Name,
-        strings.Split(gliTag[offset:], ","),
+        strings.Split(gliTag, ","),
         val,
         defaultVal,
         required,
         description,
+        override,
     }
 }
 

@@ -1,14 +1,20 @@
 package main
 
-import "fmt"
+import (
+    "fmt"
+)
 
 type Application struct {
+    Help       bool       `gli:"^help,h"`
     SubCommand SubCommand `gli:"sub,s,subcommand" description:"does some sub command things"`
     Flag       bool       `gli:"flag,f"`
     BoolTrue   bool       `gli:"b,bt" default:"true"`
     BoolArray  []bool     `gli:"ba"`
     String     string     `gli:"string,s,S"`
-    Help       bool       `gli:"help,h,H"`
+}
+
+func (app *Application) NeedHelp() bool {
+    return app.Help
 }
 
 

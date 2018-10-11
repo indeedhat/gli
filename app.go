@@ -1,6 +1,8 @@
 package gli
 
 import (
+    "fmt"
+    "github.com/indeedhat/gli/util"
     "os"
     "reflect"
 )
@@ -25,45 +27,46 @@ func NewApplication(structure Command) (app *App) {
 // parse input and run appropriate command
 func (app *App) Run() {
     code := 0 // response/exit code
-    args := os.Args[1:]
 
-    app.Parser = NewParser(app, args)
-    err    := app.Parser.Parse()
+    defer func() {
+        msg := recover()
+        // check for error
+        if nil != msg || 0 != code {
+            // set appropriate exit code
+            code, _ = util.IfElse(0 == code, 1, code).(int)
 
-    // inflate struct with args if they could be parsed
-    if nil == err {
-        inflater := NewInflater(app.Subject, app.Parser.Valid)
-        err = inflater.Run()
-    }
+            // show error message
+            if nil != msg {
+                fmt.Fprintln(os.Stdout, msg)
+            }
+
+            // show help
+            if _, ok := app.Subject.(Helper); ok {
+                app.ShowHelp(true)
+            }
+        }
+
+        os.Exit(code)
+    }()
+
+    // parse args
+    app.Parser = NewParser(app, os.Args[1:])
+    util.PanicOnError(
+        app.Parser.Parse(),
+    )
+
+    // inflate the command struct with parsed args
+    inf := NewInflater(app.Subject, app.Parser.Valid)
+    util.PanicOnError(
+        inf.Run(),
+    )
 
     // Check flags and show help if required
     if app.ShowHelp(false) {
         os.Exit(0)
     }
 
-    // run app if command if there is no error
-    if nil == err {
-        code = app.Subject.Run()
-    }
-
-    if nil != err || 0 != code {
-        // display error if present
-        if nil != err {
-            os.Stderr.WriteString(err.Error())
-        }
-
-        // set default fail code
-        if 0 == code {
-            code = 1
-        }
-
-        // show help if auto helper is implemented
-        if ah, ok := app.Subject.(AutoHelper); ok && ah.AutoHelp() {
-            app.ShowHelp(true)
-        }
-    }
-
-    os.Exit(code)
+    code = app.Subject.Run()
 }
 
 
@@ -84,24 +87,17 @@ func (app *App) SelectCommand(fieldName string) bool {
 
 func (app *App) ShowHelp(force bool) bool {
     if !force {
-        for field, arg := range app.Parser.Valid {
-            if "Help" != field { continue }
-
-            if reflect.Bool == arg.ArgType.Kind() && "true" == arg.Value[len(arg.Value) - 1] {
-                force = true
-            }
-        }
-
-        if !force {
+        if help, ok := app.Subject.(Helper); !ok || !help.NeedHelp() {
             return false
         }
     }
 
     if cmd, ok := app.Subject.(CustomHelp); ok {
-        os.Stdout.WriteString(cmd.Help(app.Parser.Expected))
+        os.Stdout.WriteString(cmd.GenerateHelp(app.Parser.Expected))
     } else {
-        doc := NewDocumenter(app.Parser.Expected)
-        os.Stdout.WriteString(doc.Build())
+        os.Stdout.WriteString(
+            NewDocumenter(app.Parser.Expected).Build(),
+        )
     }
 
     return true

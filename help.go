@@ -12,21 +12,22 @@ import (
 
 const TAB = "    "
 
-type Documenter struct {
+
+type HelpDocumenter struct {
     Expected []*ExpectedArg
     Subject  *ExpectedArg
 }
 
 
-func NewDocumenter(expected []*ExpectedArg) (doc *Documenter) {
-    doc = &Documenter{}
+func NewDocumenter(expected []*ExpectedArg) (doc *HelpDocumenter) {
+    doc = &HelpDocumenter{}
     doc.Expected = expected
 
     return
 }
 
 
-func (doc *Documenter) Build() string {
+func (doc *HelpDocumenter) Build() string {
     commands := bytes.NewBufferString("")
     args     := bytes.NewBufferString("")
     options  := bytes.NewBufferString("")
@@ -62,7 +63,7 @@ func (doc *Documenter) Build() string {
 }
 
 
-func (doc *Documenter) buildPositionalEntry(buffer *bytes.Buffer) {
+func (doc *HelpDocumenter) buildPositionalEntry(buffer *bytes.Buffer) {
     // get arg name from struct field
     openArg(buffer, strings.ToLower(doc.Subject.FieldName))
 
@@ -70,7 +71,7 @@ func (doc *Documenter) buildPositionalEntry(buffer *bytes.Buffer) {
 }
 
 
-func (doc *Documenter) buildOptionEntry(buffer *bytes.Buffer) {
+func (doc *HelpDocumenter) buildOptionEntry(buffer *bytes.Buffer) {
     // build list of options
     var opts []string
     for i := 0; i < len(doc.Subject.Keys); i++ {
@@ -86,7 +87,7 @@ func (doc *Documenter) buildOptionEntry(buffer *bytes.Buffer) {
 }
 
 
-func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer) {
+func (doc *HelpDocumenter) buildArgEntry(buffer *bytes.Buffer) {
     // add default value
     def := ""
     if "" != doc.Subject.DefaultVal && reflect.Bool != doc.Subject.ArgType.Kind() {
@@ -116,7 +117,7 @@ func (doc *Documenter) buildArgEntry(buffer *bytes.Buffer) {
 }
 
 
-func (doc *Documenter) buildCommandEntry(buffer *bytes.Buffer) {
+func (doc *HelpDocumenter) buildCommandEntry(buffer *bytes.Buffer) {
     var opts = doc.Subject.Keys
     sort.Slice(opts, func (i, j int) bool {
         return len(opts[i]) > len(opts[j])
@@ -128,7 +129,7 @@ func (doc *Documenter) buildCommandEntry(buffer *bytes.Buffer) {
 
 
 // create a header block
-func (doc *Documenter) buildHeader(buffer *bytes.Buffer, text string) {
+func (doc *HelpDocumenter) buildHeader(buffer *bytes.Buffer, text string) {
     fmt.Fprintf(buffer, "\n%s\n\n", color.Wrap(text + ":", color.White))
 }
 
