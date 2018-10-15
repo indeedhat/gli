@@ -33,7 +33,7 @@ func (app *App) Run() {
         // check for error
         if nil != msg || 0 != code {
             // set appropriate exit code
-            code, _ = util.IfElse(0 == code, 1, cogit ade).(int)
+            code, _ = util.IfElse(0 == code, 1, code).(int)
 
             // show error message
             if nil != msg {
@@ -76,7 +76,7 @@ func (app *App) SelectCommand(fieldName string) bool {
     if t, ok := reflect.TypeOf(app.Subject).Elem().FieldByName(fieldName); ok {
         cmd, ok := reflect.New(t.Type).Interface().(Command)
         if ok {
-            app.Subject = newActiveCommand(cmd, t.Tag.Get("description")
+            app.Subject = newActiveCommand(cmd, t.Tag.Get("description"))
             return true
         }
     }
