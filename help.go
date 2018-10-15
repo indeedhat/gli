@@ -27,7 +27,7 @@ func NewDocumenter(expected []*ExpectedArg) (doc *HelpDocumenter) {
 }
 
 
-func (doc *HelpDocumenter) Build() string {
+func (doc *HelpDocumenter) Build(description string) string {
     commands := bytes.NewBufferString("")
     args     := bytes.NewBufferString("")
     options  := bytes.NewBufferString("")
@@ -53,7 +53,8 @@ func (doc *HelpDocumenter) Build() string {
 
     fmt.Fprintf(
         output,
-        "%s%s%s",
+        "%s\n%s%s%s",
+        description,
         args,
         options,
         commands,

@@ -25,5 +25,5 @@ type IgnoreUnexpected interface {
 // returns a custom help string to be passed on help call or error
 type CustomHelp interface {
     Helper
-    GenerateHelp(expected []*ExpectedArg) string
+    GenerateHelp(expected []*ExpectedArg, description string) string
 }

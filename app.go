@@ -9,16 +9,16 @@ import (
 
 type App struct {
     Structure Command // the full structure of the application
-    Subject   Command // the command that is currently being run
+    Subject   ActiveCommand // the command that is currently being run
     Parser    Parser
 }
 
 
 // App constructor
-func NewApplication(structure Command) (app *App) {
+func NewApplication(structure Command, description string) (app *App) {
     app = &App{}
     app.Structure = structure
-    app.Subject   = structure
+    app.Subject   = newActiveCommand(structure, description)
 
     return
 }
@@ -33,7 +33,7 @@ func (app *App) Run() {
         // check for error
         if nil != msg || 0 != code {
             // set appropriate exit code
-            code, _ = util.IfElse(0 == code, 1, code).(int)
+            code, _ = util.IfElse(0 == code, 1, cogit ade).(int)
 
             // show error message
             if nil != msg {
@@ -41,7 +41,7 @@ func (app *App) Run() {
             }
 
             // show help
-            if _, ok := app.Subject.(Helper); ok {
+            if _, ok := app.Subject.Cmd.(Helper); ok {
                 app.ShowHelp(true)
             }
         }
@@ -56,7 +56,7 @@ func (app *App) Run() {
     )
 
     // inflate the command struct with parsed args
-    inf := NewInflater(app.Subject, app.Parser.Valid)
+    inf := NewInflater(app.Subject.Cmd, app.Parser.Valid)
     util.PanicOnError(
         inf.Run(),
     )
@@ -66,7 +66,7 @@ func (app *App) Run() {
         os.Exit(0)
     }
 
-    code = app.Subject.Run()
+    code = app.Subject.Cmd.Run()
 }
 
 
@@ -76,7 +76,7 @@ func (app *App) SelectCommand(fieldName string) bool {
     if t, ok := reflect.TypeOf(app.Subject).Elem().FieldByName(fieldName); ok {
         cmd, ok := reflect.New(t.Type).Interface().(Command)
         if ok {
-            app.Subject = cmd
+            app.Subject = newActiveCommand(cmd, t.Tag.Get("description")
             return true
         }
     }
@@ -87,16 +87,16 @@ func (app *App) SelectCommand(fieldName string) bool {
 
 func (app *App) ShowHelp(force bool) bool {
     if !force {
-        if help, ok := app.Subject.(Helper); !ok || !help.NeedHelp() {
+        if help, ok := app.Subject.Cmd.(Helper); !ok || !help.NeedHelp() {
             return false
         }
     }
 
-    if cmd, ok := app.Subject.(CustomHelp); ok {
-        os.Stdout.WriteString(cmd.GenerateHelp(app.Parser.Expected))
+    if cmd, ok := app.Subject.Cmd.(CustomHelp); ok {
+        os.Stdout.WriteString(cmd.GenerateHelp(app.Parser.Expected, app.Subject.Description))
     } else {
         os.Stdout.WriteString(
-            NewDocumenter(app.Parser.Expected).Build(),
+            NewDocumenter(app.Parser.Expected).Build(app.Subject.Description),
         )
     }
 
