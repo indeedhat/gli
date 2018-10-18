@@ -157,8 +157,8 @@ func (parser *Parser) nextValue(arg string, i, x int) string {
 func (parser *Parser) extractExpectedArgs() {
     parser.Expected = []*ExpectedArg{}
 
-    t := reflect.TypeOf(parser.app.Subject)
-    v := reflect.ValueOf(parser.app.Subject)
+    t := reflect.TypeOf(parser.app.Subject.Cmd)
+    v := reflect.ValueOf(parser.app.Subject.Cmd)
     for i := 0; i < v.Elem().NumField(); i++ {
         arg := newExpectedArg(
             t.Elem().Field(i),
