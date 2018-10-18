@@ -255,7 +255,7 @@ func (parser *Parser) addToValid(value, key string, expected *ExpectedArg, offse
 
 // check if unexpected arguments are allowed by the command
 func (parser *Parser) unexpectedAllowed() bool {
-    unex, ok := parser.app.Subject.(IgnoreUnexpected)
+    unex, ok := parser.app.Subject.Cmd.(IgnoreUnexpected)
     return ok && unex.IgnoreUnexpected()
 }
 
