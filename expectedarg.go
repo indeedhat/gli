@@ -20,8 +20,8 @@ type ExpectedArg struct {
 // constructor for an expected argument
 func newExpectedArg(field reflect.StructField, val reflect.Value) *ExpectedArg {
     // skip fields without a gli tag
-    gliTag := field.Tag.Get("gli")
-    if "" == gliTag { return nil }
+    gliTag, ok := field.Tag.Lookup("gli")
+    if !ok { return nil }
 
     // check arg options
     required  := strings.Contains(gliTag, "!")
