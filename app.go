@@ -73,7 +73,7 @@ func (app *App) Run() {
 // select a command by name
 // this will only search for the command within the current active command
 func (app *App) SelectCommand(fieldName string) bool {
-    if t, ok := reflect.TypeOf(app.Subject).Elem().FieldByName(fieldName); ok {
+    if t, ok := reflect.TypeOf(app.Subject.Cmd).Elem().FieldByName(fieldName); ok {
         cmd, ok := reflect.New(t.Type).Interface().(Command)
         if ok {
             app.Subject = newActiveCommand(cmd, t.Tag.Get("description"))
