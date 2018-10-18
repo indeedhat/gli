@@ -30,6 +30,12 @@ func newExpectedArg(field reflect.StructField, val reflect.Value) *ExpectedArg {
         rep := strings.NewReplacer("!", "", "^", "")
         gliTag = rep.Replace(gliTag)
     }
+    
+    // parse keys if needed
+    var keys []string
+    if "" != gliTag {
+        keys = strings.Split(gliTag, ",")
+    }
 
     // parse description tag
     description := field.Tag.Get("description")
@@ -39,11 +45,12 @@ func newExpectedArg(field reflect.StructField, val reflect.Value) *ExpectedArg {
     if reflect.Bool == val.Kind() && "true" != defaultVal && "false" != defaultVal {
         defaultVal = "false"
     }
+   
 
     // create arg for return
     return &ExpectedArg{
         field.Name,
-        strings.Split(gliTag, ","),
+        keys,
         val,
         defaultVal,
         required,
