@@ -11,6 +11,7 @@ type App struct {
     Structure Command // the full structure of the application
     Subject   ActiveCommand // the command that is currently being run
     Parser    Parser
+    Debug     bool // dont recover in debug mode
 }
 
 
@@ -28,26 +29,28 @@ func NewApplication(structure Command, description string) (app *App) {
 func (app *App) Run() {
     code := 0 // response/exit code
 
-    defer func() {
-        msg := recover()
-        // check for error
-        if nil != msg || 0 != code {
-            // set appropriate exit code
-            code, _ = util.IfElse(0 == code, 1, code).(int)
+    if !app.Debug {
+        defer func() {
+            msg := recover()
+            // check for error
+            if nil != msg || 0 != code {
+                // set appropriate exit code
+                code, _ = util.IfElse(0 == code, 1, code).(int)
 
-            // show error message
-            if nil != msg {
-                fmt.Fprintln(os.Stdout, msg)
+                // show error message
+                if nil != msg {
+                    fmt.Fprintln(os.Stdout, msg)
+                }
+
+                // show help
+                if _, ok := app.Subject.Cmd.(Helper); ok {
+                    app.ShowHelp(true)
+                }
             }
 
-            // show help
-            if _, ok := app.Subject.Cmd.(Helper); ok {
-                app.ShowHelp(true)
-            }
-        }
-
-        os.Exit(code)
-    }()
+            os.Exit(code)
+        }()
+    }
 
     // parse args
     app.Parser = NewParser(app, os.Args[1:])
