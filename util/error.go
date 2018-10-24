@@ -8,6 +8,6 @@ import (
 func PanicOnError(err error) {
     if nil != err {
         cerr := errors.New(err)
-        panic(fmt.Sprintf("%s\n%s", cerr.Error(), cerr.ErrorStack()))
+        panic(fmt.Sprintf("GLI: %s\n%s", cerr.Error(), cerr.ErrorStack()))
     }
 }
