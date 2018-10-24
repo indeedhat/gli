@@ -178,7 +178,11 @@ func (parser *Parser) extractExpectedArgs() {
 func (parser *Parser) assignMissingDefaults() {
     for _, expected := range parser.Expected {
         if _, ok := parser.Valid[expected.FieldName]; !ok && "" != expected.DefaultVal {
-            parser.addToValid(expected.DefaultVal, expected.Keys[0], expected, -1)
+            key := ""
+            if 0 < len(expected.Keys) {
+                key = expected.Keys[0]
+            }
+            parser.addToValid(expected.DefaultVal, key, expected, -1)
         }
     }
 }
