@@ -50,7 +50,7 @@ func (inf *Inflater) Run() (err error) {
 
 func (inf *Inflater) inflateString(arg *ValidArg) error {
     if util.IsSlice(arg.ArgType) {
-        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.ArgType)))
+        arg.ArgType.Set(reflect.AppendSlice(arg.ArgType, reflect.ValueOf(arg.Value)))
     } else {
         arg.ArgType.SetString(arg.Value[len(arg.Value) - 1])
     }
