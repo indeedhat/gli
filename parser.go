@@ -110,6 +110,7 @@ func (parser *Parser) Parse() (err error) {
                 if arg[x + 1:] == value {
                     break
                 } else if "" != value {
+                    _ = parser.checkAndAssign(value, key, errorString, expected, position)
                     i++
                 }
             }
