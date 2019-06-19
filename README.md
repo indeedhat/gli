@@ -38,7 +38,7 @@ func (app *Application) Run() int {
 }
 
 func main() {
-    app := gli.NewApp(&Application{})
+    app := gli.NewApp(&Application{}, "Example App")
     app.Run()
 }
 ```

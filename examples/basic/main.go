@@ -1,13 +1,13 @@
 package main
 
 import (
-    "github.com/indeedhat/gli"
+	"github.com/indeedhat/gli"
 )
 
 func main() {
-    app := &Application{}
+	app := &Application{}
 
-    cli := gli.NewApplication(app)
-    cli.Run()
-    //
+	cli := gli.NewApplication(app, "Example app")
+	cli.Run()
+	//
 }
